@@ -1,0 +1,114 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define MAX_PATIENTS 100
+#define NAME_LENGTH 50
+
+typedef struct {
+    char name[NAME_LENGTH];
+    int severity; // 1 = highest urgency, 5 = lowest urgency
+} Patient;
+
+typedef struct {
+    Patient patients[MAX_PATIENTS];
+    int size;
+} PriorityQueue;
+
+// Function to initialize the queue
+void initQueue(PriorityQueue *pq) {
+    pq->size = 0;
+}
+
+// Function to swap two patients
+void swap(Patient *a, Patient *b) {
+    Patient temp = *a;
+    *a = *b;
+    *b = temp;
+}
+
+// Heapify up (after inserting a new patient)
+void heapifyUp(PriorityQueue *pq, int index) {
+    if (index == 0)
+        return;
+    int parent = (index - 1) / 2;
+    if (pq->patients[index].severity < pq->patients[parent].severity) {
+        swap(&pq->patients[index], &pq->patients[parent]);
+        heapifyUp(pq, parent);
+    }
+}
+
+// Heapify down (after removing the highest priority patient)
+void heapifyDown(PriorityQueue *pq, int index) {
+    int left = 2 * index + 1;
+    int right = 2 * index + 2;
+    int smallest = index;
+
+    if (left < pq->size && pq->patients[left].severity < pq->patients[smallest].severity)
+        smallest = left;
+    if (right < pq->size && pq->patients[right].severity < pq->patients[smallest].severity)
+        smallest = right;
+
+    if (smallest != index) {
+        swap(&pq->patients[index], &pq->patients[smallest]);
+        heapifyDown(pq, smallest);
+    }
+}
+
+// Function to admit a patient
+void admitPatient(PriorityQueue *pq, char name[], int severity) {
+    if (pq->size >= MAX_PATIENTS) {
+        printf("Emergency Room is full!\n");
+        return;
+    }
+    strcpy(pq->patients[pq->size].name, name);
+    pq->patients[pq->size].severity = severity;
+    heapifyUp(pq, pq->size);
+    pq->size++;
+    printf("Admitted patient: %s (Severity: %d)\n", name, severity);
+}
+
+// Function to discharge the most urgent patient
+void dischargePatient(PriorityQueue *pq) {
+    if (pq->size == 0) {
+        printf("No patients to discharge.\n");
+        return;
+    }
+    printf("Discharging patient: %s (Severity: %d)\n",
+           pq->patients[0].name, pq->patients[0].severity);
+    pq->patients[0] = pq->patients[pq->size - 1];
+    pq->size--;
+    heapifyDown(pq, 0);
+}
+
+// Function to show all waiting patients
+void showPatients(PriorityQueue *pq) {
+    if (pq->size == 0) {
+        printf("No patients waiting.\n");
+        return;
+    }
+    printf("Current waiting patients:\n");
+    for (int i = 0; i < pq->size; i++) {
+        printf(" - %s (Severity: %d)\n", pq->patients[i].name, pq->patients[i].severity);
+    }
+}
+
+int main() {
+    PriorityQueue er;
+    initQueue(&er);
+
+    admitPatient(&er, "Alice", 3);
+    admitPatient(&er, "Bob", 1);
+    admitPatient(&er, "Charlie", 4);
+    admitPatient(&er, "Diana", 2);
+
+    showPatients(&er);
+
+    dischargePatient(&er);
+    showPatients(&er);
+
+    dischargePatient(&er);
+    showPatients(&er);
+
+    return 0;
+}
